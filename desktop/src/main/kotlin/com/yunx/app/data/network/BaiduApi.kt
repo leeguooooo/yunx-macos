@@ -389,6 +389,7 @@ suspend fun listShare(surl: String, sekey: String, dir: String, cookie: String, 
      *  - URL 使用 pan.baidu.com（旧 yun.baidu.com 在部分账号下偶发 errno=-6/191）
      *  - 携带 bdstoken + channel=chunlei + showempty=0，对齐官方 web 抓包
      *  - errno=-6（bdstoken 失效）→ 强制 refreshBdstoken 后重试一次
+     *  - 重试后仍 errno=-6 → 登录态失效，提示重新登录
      *  - 其它非零 errno → 抛 IllegalStateException（不静默吞掉，避免误判为空目录）
      */
     suspend fun listCloudFiles(dir: String, cookie: String): List<ShareFile> = withContext(Dispatchers.IO) {
@@ -401,6 +402,9 @@ suspend fun listShare(surl: String, sekey: String, dir: String, cookie: String, 
             val (array2, errno2) = requestListCloudFiles(dir, cookie, fresh)
             array = array2
             errno = errno2
+        }
+        if (errno == -6) {
+            throw IllegalStateException("百度网盘登录已失效，请重新登录")
         }
         if (errno != 0) {
             throw IllegalStateException("百度网盘接口错误 (errno=$errno)")

@@ -27,7 +27,7 @@ fun BaiduLoginScreen(
         JcefLoginPane(
             loginUrl = BaiduConstants.LOGIN_URL,
             domains = listOf(".baidu.com"),
-            requiredKeys = listOf("BDUSS"),
+            requiredKeys = listOf("BDUSS", "STOKEN"),
             platform = "BAIDU",
             onSave = { cookie -> viewModel.saveBaiduAccount(cookie) },
             onBack = onBack,
