@@ -219,10 +219,21 @@ object DbKeyStore {
 
     /** Windows MachineGuid（HKLM\SOFTWARE\Microsoft\Cryptography），普通用户可读 */
     private fun machineGuid(): String? = runCatching {
+        if (!isWindows()) return@runCatching macPlatformUuid()
         Advapi32Util.registryGetStringValue(
             WinReg.HKEY_LOCAL_MACHINE, "SOFTWARE\\Microsoft\\Cryptography", "MachineGuid"
         ).takeIf { it.isNotBlank() }
     }.getOrNull()
+
+    /** macOS 硬件 UUID（IOPlatformUUID），与 Windows MachineGuid 同样机器唯一且不随改名变化 */
+    private fun macPlatformUuid(): String? {
+        val process = ProcessBuilder("/usr/sbin/ioreg", "-rd1", "-c", "IOPlatformExpertDevice")
+            .redirectErrorStream(true)
+            .start()
+        val output = process.inputStream.bufferedReader().use { it.readText() }
+        process.waitFor()
+        return Regex("\"IOPlatformUUID\" = \"([^\"]+)\"").find(output)?.groupValues?.get(1)
+    }
 
     /** 较为严格档：Windows DPAPI（CryptProtectData，绑定当前登录用户） */
     private fun wrapDpapi(key: ByteArray): String {

@@ -7,6 +7,7 @@ import com.yunx.app.AppContext
 import com.yunx.app.util.Log
 import me.friwi.jcefmaven.CefAppBuilder
 import org.cef.CefApp
+import org.cef.CefClient
 import org.cef.CefSettings
 import java.io.File
 
@@ -17,7 +18,7 @@ import java.io.File
  * - Windows/Linux：后台线程初始化（initInBackground），不阻塞窗口显示。
  *   依据：CefApp 的 CEF 消息循环由内部 workTimer_（Swing Timer）在 AWT EDT 上泵动，
  *   与调用 CefInitialize 的线程无关；且消息泵本来就要等 EDT 转起来才工作。
- * - macOS：保持阻塞式主线程初始化（AppKit 要求主线程）。
+ * - macOS：保持阻塞式主线程初始化（AppKit 要求主线程），并在窗口出现前完成原生初始化，避免与辅助功能查询死锁。
  *
  * 可靠性策略：
  * - 单次初始化最多尝试 [MAX_INIT_ATTEMPTS] 次（含短退避），失败常见诱因是上次异常退出
@@ -41,6 +42,12 @@ object JcefHolder {
     /** Compose 可观察状态：CEF 初始化成功后为 true，登录页据此自动启用内嵌浏览器 */
     var browserReady by mutableStateOf(false)
         private set
+
+    private val isMac = System.getProperty("os.name", "").lowercase().contains("mac")
+
+    /** 仅 macOS：提前触发原生初始化的 client，随进程存活，防止 CEF 因无 client 而退出 */
+    @Volatile
+    private var warmClient: CefClient? = null
 
     private val lock = Any()
     private var initThread: Thread? = null
@@ -75,7 +82,12 @@ object JcefHolder {
                     settings.cache_path = File(AppContext.cacheDir, "jcef/cache").absolutePath
                     settings.log_file = File(AppContext.filesDir, "jcef.log").absolutePath
                     settings.log_severity = org.cef.CefSettings.LogSeverity.LOGSEVERITY_WARNING
-                    cefApp = builder.build()
+                    val app = builder.build()
+                    // macOS：CefApp 首次 createClient 才在 EDT 上执行 N_Initialize，期间要等 AppKit 主线程；
+                    // 窗口已显示时若辅助功能查询正占着主线程等 EDT，两边互等死锁（点登录即卡死）。
+                    // 在窗口出现前先创建一个常驻 client 完成原生初始化。
+                    if (isMac) warmClient = app.createClient()
+                    cefApp = app
                     browserReady = true
                     initFailure = null
                     Log.i(TAG, "JCEF initialized (attempt $attempt)")
@@ -136,6 +148,8 @@ object JcefHolder {
 
     /** 进程退出前释放（尽力而为；进程即将结束，失败无碍） */
     fun disposeQuietly() {
+        runCatching { warmClient?.dispose() }
+        warmClient = null
         runCatching { cefApp?.dispose() }.onFailure {
             Log.w(TAG, "CefApp dispose failed: ${it.message}")
         }
