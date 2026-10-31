@@ -451,22 +451,6 @@ fun DriveScreen(
                         }
                     )
                 }
-                item(key = baidu.id) {
-                    DriveAccountCard(
-                        account = baidu,
-                        quota = driveQuotaViewModel.baiduQuota.collectAsState().value,
-                        onClick = if (baidu.isLoggedIn) {
-                            { showBaiduCloud = true }
-                        } else {
-                            onBaiduLogin
-                        },
-                        onMoreClick = if (baidu.isLoggedIn) {
-                            { showBaiduSheet = true }
-                        } else {
-                            null
-                        }
-                    )
-                }
                 item(key = c139.id) {
                     DriveAccountCard(
                         account = c139,

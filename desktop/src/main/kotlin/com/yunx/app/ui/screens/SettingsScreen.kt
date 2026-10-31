@@ -117,7 +117,6 @@ private val threadPlatformSections = listOf(
             ThreadPlatform(DownloadPlatform.QUARK, "夸克网盘"),
             ThreadPlatform(DownloadPlatform.UC, "UC 网盘"),
             ThreadPlatform(DownloadPlatform.XUNLEI, "迅雷网盘"),
-            ThreadPlatform(DownloadPlatform.BAIDU, "百度网盘"),
             ThreadPlatform(DownloadPlatform.C139, "139 网盘"),
             ThreadPlatform(DownloadPlatform.PAN123, "123 云盘"),
             ThreadPlatform(DownloadPlatform.PAN115, "115 网盘"),

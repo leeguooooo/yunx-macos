@@ -247,7 +247,6 @@ private fun PlatformCard() {
         "夸克网盘" to Icons.Outlined.Cloud,
         "UC 网盘" to Icons.Outlined.Storage,
         "迅雷网盘" to Icons.Outlined.Speed,
-        "百度网盘" to Icons.Outlined.Link,
         "139 网盘" to Icons.Outlined.Cloud,
         "123云盘" to Icons.Outlined.Cloud,
         "115网盘" to Icons.Outlined.Cloud,

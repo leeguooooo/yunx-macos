@@ -917,6 +917,12 @@ class ResolveViewModel(
                 uiState = ResolveUiState.Error(commandError ?: "无法识别分享链接")
                 return@launch
             }
+            // 百度网盘风控严重（大文件批量 403、账号有封禁风险），不再支持解析
+            if (parsed.platform == SharePlatform.BAIDU) {
+                prefillRequest = lastResolveInput
+                uiState = ResolveUiState.Error("暂不支持百度网盘")
+                return@launch
+            }
             // 口令已换成真实分享链接：收藏 / 复制 / 重新解析都用它，而不是原始口令
             currentLink = effectiveLink
             currentPlatform = parsed.platform
