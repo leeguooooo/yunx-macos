@@ -160,6 +160,7 @@ tasks.register<JavaExec>("testInProcess") {
         "com.yunx.app.data.download.DownloadGroupingTest",
         "com.yunx.app.data.download.DirectPartManifestTest",
         "com.yunx.app.data.download.DownloadSaverTest",
+        "com.yunx.app.data.download.SegmentChainTest",
         "com.yunx.app.data.download.ChunkDownloaderDirectTest",
         "com.yunx.app.data.download.DownloadCacheMaintenanceTest",
         "com.yunx.app.data.download.DownloadManagerDirectIntegrationTest",

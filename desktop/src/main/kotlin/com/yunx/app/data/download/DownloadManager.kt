@@ -2294,9 +2294,18 @@ class DownloadManager(
         val mainFiles = (0 until mainPoolCount).map { File(chunkDir, "part_$it") }
         val elasticFiles = chunkDir.listFiles { f ->
             f.name.startsWith("seg_") && f.name.endsWith(".part")
-        }?.sortedBy { it.name.removePrefix("seg_").substringBefore('_').toLong() }
-            ?: emptyList()
-        return mainFiles + elasticFiles
+        }?.toList() ?: emptyList()
+        val segments = elasticFiles.mapNotNull { f ->
+            val range = f.name.removePrefix("seg_").removeSuffix(".part").split('_')
+            val start = range.getOrNull(0)?.toLongOrNull()
+            val end = range.getOrNull(1)?.toLongOrNull()
+            if (start != null && end != null) SegmentRange(start, end, f) else null
+        }
+        // ★ 抢占 / 补齐会用不同粒度重下同一区间，seg 之间可能重叠，全量拼接会超长（大小校验失败且重试也救不回）。
+        val chain = selectSegmentChain(segments, mainFiles.sumOf { it.length() })
+        return mainFiles + (chain ?: elasticFiles.sortedBy {
+            it.name.removePrefix("seg_").substringBefore('_').toLong()
+        })
     }
 
     /**
@@ -3664,4 +3673,29 @@ class DownloadManager(
 
         internal val chunkIoDispatcher: CoroutineDispatcher = chunkIoExecutor.asCoroutineDispatcher()
     }
+}
+
+/** 弹性区分片：闭区间 [start, end] 的本地文件 */
+internal data class SegmentRange(val start: Long, val end: Long, val file: File)
+
+/**
+ * 从可能重叠的分片里选一条首尾相接、从 [from] 连到最后一个字节的链；连不上时返回 null。
+ * 优先走更长的分片，分片越少合并越快。
+ */
+internal fun selectSegmentChain(segments: List<SegmentRange>, from: Long): List<File>? {
+    if (segments.isEmpty()) return emptyList()
+    val last = segments.maxOf { it.end }
+    val byStart = segments.groupBy { it.start }
+    val visited = HashSet<Long>()
+    val stack = ArrayDeque<Pair<Long, List<File>>>()
+    stack.addLast(from to emptyList())
+    while (stack.isNotEmpty()) {
+        val (position, chain) = stack.removeLast()
+        if (position == last + 1) return chain
+        if (!visited.add(position)) continue
+        byStart[position].orEmpty().sortedBy { it.end }.forEach { segment ->
+            stack.addLast(segment.end + 1 to chain + segment.file)
+        }
+    }
+    return null
 }
