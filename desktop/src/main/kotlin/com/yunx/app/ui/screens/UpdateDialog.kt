@@ -61,6 +61,7 @@ fun UpdateDialog(
 ) {
     val exeAsset = release.assets.firstOrNull { it.name.endsWith(".exe", true) }
     val zipAsset = release.assets.firstOrNull { it.name.endsWith(".zip", true) }
+    val dmgAsset = release.assets.firstOrNull { it.name.endsWith(".dmg", true) }
     // 说明里的图片复用 README 的自研加载器（无 Coil，走 GitHubMirror 统一镜像加速）
     GitHubMarkdownImageTransformer.mirrorPrefix = GitHubMirror.activePrefix()
     // 紧凑字号：与 README 共用同一份排版（见 ui/theme/Type.kt）
@@ -169,6 +170,18 @@ fun UpdateDialog(
                 }
                 Spacer(modifier = Modifier.height(16.dp))
                 // 下载入口（安装版 / 便携版，各自可选镜像站）
+                if (dmgAsset != null) {
+                    // DMG 需要用户手动拖入“应用程序”，交给浏览器下载，不走应用内的安装流程
+                    Button(onClick = { com.yunx.app.util.DesktopActions.openUrl(dmgAsset.downloadUrl) }) {
+                        Icon(
+                            imageVector = Icons.Outlined.Download,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("下载 Mac 版 (.dmg)")
+                    }
+                }
                 if (exeAsset != null) {
                     Button(
                         onClick = { onDownloadAsset(exeAsset.downloadUrl, exeAsset.name) },
@@ -226,7 +239,7 @@ fun UpdateDialog(
                         }
                     }
                 }
-                if (exeAsset == null && zipAsset == null) {
+                if (exeAsset == null && zipAsset == null && dmgAsset == null) {
                     Text(
                         text = "该版本未提供安装包",
                         style = MaterialTheme.typography.bodySmall,

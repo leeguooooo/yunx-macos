@@ -16,12 +16,15 @@ import org.json.JSONObject
  */
 object UpdateChecker {
 
-    private const val RELEASES_LATEST_URL =
-        "https://api.github.com/repos/tidain/YunX-Desktop/releases/latest"
+    /** Mac 版走自己的发版仓库，上游只发 Windows 安装包 */
+    private val RELEASE_REPO =
+        if (System.getProperty("os.name", "").lowercase().contains("mac")) "leeguooooo/yunx-macos"
+        else "tidain/YunX-Desktop"
+
+    private val RELEASES_LATEST_URL = "https://api.github.com/repos/$RELEASE_REPO/releases/latest"
 
     /** Release 列表（按发布时间倒序，含 Pre-release）：开启「接受预发布版更新」时用它取最新一条 */
-    private const val RELEASES_LIST_URL =
-        "https://api.github.com/repos/tidain/YunX-Desktop/releases"
+    private val RELEASES_LIST_URL = "https://api.github.com/repos/$RELEASE_REPO/releases"
 
     private const val TAG = "YunX-Update"
 
