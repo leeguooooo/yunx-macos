@@ -24,7 +24,7 @@ object SingleInstance {
     private const val TAG = "YunX-SingleInstance"
 
     /** 主窗口标题：与 Main.kt 里 Compose `Window(title = ...)` 保持一致 */
-    private const val WINDOW_TITLE = "云析 YunX-Desktop"
+    private const val WINDOW_TITLE = "云析"
 
     private var holder: RandomAccessFile? = null
     private var lock: FileLock? = null

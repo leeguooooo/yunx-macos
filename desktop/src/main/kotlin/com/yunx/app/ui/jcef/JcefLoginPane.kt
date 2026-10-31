@@ -352,6 +352,8 @@ fun AutoImportCookieButton(
     onSaved: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    // Cookie 解密依赖 Windows DPAPI，Mac 上只能内嵌登录或手动粘贴
+    if (com.yunx.app.util.MacSupport.isMac) return
     val scope = rememberCoroutineScope()
     var show by remember { mutableStateOf(false) }
     var scanning by remember { mutableStateOf(false) }

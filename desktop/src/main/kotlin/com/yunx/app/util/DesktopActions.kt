@@ -62,6 +62,7 @@ object DesktopActions {
     fun revealFile(path: String): Boolean {
         val file = File(path)
         if (!file.exists()) return false
+        if (MacSupport.isMac) return MacSupport.open("-R", file.absolutePath)
         if (WindowsTitleBar.isWindows) {
             // 返回 HINSTANCE：> 32 表示成功（<= 32 是错误码），失败再退回命令行方式
             val ret = runCatching {
@@ -82,6 +83,7 @@ object DesktopActions {
     fun openDirectory(path: String): Boolean {
         val dir = File(path)
         if (!dir.isDirectory && !dir.mkdirs()) return false
+        if (MacSupport.isMac) return MacSupport.open(dir.absolutePath)
         return runCatching {
             ProcessBuilder("explorer.exe", dir.absolutePath).start()
             true
@@ -118,6 +120,7 @@ object DesktopActions {
      * 拿不到启动器 exe（开发运行 `gradle run`）时返回 false，由调用方提示手动重启。
      */
     fun restartApp(): Boolean {
+        if (MacSupport.isMac) return MacSupport.restart()
         val exe = launcherExe() ?: return false
         return runCatching {
             // 用 cmd 延迟启动：本进程马上就会退出，必须等它把文件句柄都放掉。

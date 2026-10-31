@@ -376,7 +376,7 @@ private fun FfplayUnavailablePanel(onInstalled: () -> Unit) {
         }
         Spacer(Modifier.height(16.dp))
         Text(
-            text = "也可以自行安装 FFmpeg（或把 ffplay.exe 所在目录加入 PATH）后重新打开预览。",
+            text = "也可以自行安装 FFmpeg（或把 ffplay 所在目录加入 PATH）后重新打开预览。",
             color = Color(0xFF6E6E6E),
             style = MaterialTheme.typography.bodySmall,
             textAlign = TextAlign.Center
@@ -572,7 +572,9 @@ private class FfplayPreviewController(
         embedded = false
         frozenFrame = null
         // 一直没等到可用的宿主/尺寸：窗口可能已经出现在屏幕外，搬回可见区
-        FfplayWindowFx.findWindowForProcess(p.pid())?.let { FfplayWindowFx.revealWindow(it) }
+        if (FfplayManager.isWindows()) {
+            FfplayWindowFx.findWindowForProcess(p.pid())?.let { FfplayWindowFx.revealWindow(it) }
+        }
         statusText = "FFplay 已在独立窗口播放（未能及时嵌入）"
     }
 

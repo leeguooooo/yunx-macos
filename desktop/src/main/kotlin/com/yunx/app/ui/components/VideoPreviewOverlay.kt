@@ -804,7 +804,8 @@ private fun prepareSource(media: VideoMedia): PreviewSource? {
  * - 选了「FFplay」→ 一律 true（本机没有 ffplay 时由 [FfplayPlayer] 展示下载引导，不偷偷回退）；
  * - 默认「自动」→ 检测到 ffplay 才走 ffplay，否则回退内置 JavaFX。
  */
-private fun resolveUseFfplay(): Boolean = when (
+// Mac 固定用 ffplay 独立窗口：JFXPanel 与 JCEF 共用 AppKit 主线程，预览会卡在“正在准备预览”
+private fun resolveUseFfplay(): Boolean = com.yunx.app.util.MacSupport.isMac || when (
     SettingsRepository().previewEngine
 ) {
     SettingsRepository.PREVIEW_JAVA_FX -> false

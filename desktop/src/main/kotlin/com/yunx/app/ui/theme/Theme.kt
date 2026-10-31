@@ -104,7 +104,7 @@ fun ComposeEmptyActivityTheme(
         1 -> false
         2 -> true
         else ->
-            if (com.yunx.app.util.WindowsTitleBar.isWindows) {
+            if (com.yunx.app.util.WindowsTitleBar.isWindows || com.yunx.app.util.MacSupport.isMac) {
                 com.yunx.app.util.WindowsTitleBar.systemIsDarkMode()
             } else {
                 darkTheme

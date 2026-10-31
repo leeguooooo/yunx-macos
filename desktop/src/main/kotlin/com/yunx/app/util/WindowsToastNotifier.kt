@@ -147,6 +147,11 @@ object WindowsToastNotifier {
     @Synchronized
     fun sessionEnd() {
         if (!enabled) return
+        if (MacSupport.isMac) {
+            if (lastTotalSum > 0 && lastDoneSum >= lastTotalSum) MacSupport.notify("云析", "全部任务已下载完毕")
+            lastDoneSum = 0; lastTotalSum = 0
+            return
+        }
         if (!isWindows) return
         val completed = lastTotalSum > 0 && lastDoneSum >= lastTotalSum
         lastDoneSum = 0; lastTotalSum = 0

@@ -50,6 +50,10 @@ object SystemProxy {
      * 调用方据此装配全局代理；本函数只读一次注册表。
      */
     fun inspect(): Inspect {
+        if (com.yunx.app.util.MacSupport.isMac) {
+            val (enabled, server, pac) = com.yunx.app.util.MacSupport.systemProxy()
+            return parse(if (enabled) 1 else 0, server, pac)
+        }
         if (!isWindows) {
             Log.i(TAG, "非 Windows 平台，不支持系统代理，按直连处理")
             return Inspect.Unavailable

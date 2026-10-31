@@ -59,6 +59,25 @@ object TrayManager {
         }
     }
 
+    /** Mac 菜单栏图标：用 AWT 原生菜单，左右键都弹出 */
+    fun installMac(image: BufferedImage, onShow: () -> Unit, onExit: () -> Unit) {
+        if (!SystemTray.isSupported()) return
+        if (trayIcon != null) uninstall()
+        val menu = PopupMenu().apply {
+            add(java.awt.MenuItem("显示主窗口").apply { addActionListener { onShow() } })
+            addSeparator()
+            add(java.awt.MenuItem("退出").apply { addActionListener { onExit() } })
+        }
+        val icon = TrayIcon(image, "云析").apply {
+            isImageAutoSize = true
+            popupMenu = menu
+        }
+        runCatching {
+            SystemTray.getSystemTray().add(icon)
+            trayIcon = icon
+        }
+    }
+
     /** 移除托盘图标 */
     fun uninstall() {
         trayIcon?.let { icon ->

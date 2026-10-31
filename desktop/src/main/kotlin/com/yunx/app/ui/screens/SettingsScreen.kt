@@ -319,7 +319,7 @@ fun SettingsScreen(
         SettingsItem(
             icon = Icons.Outlined.Notifications,
             title = "通知中心下载进度",
-            description = if (showSpeed) "Windows 通知中心进度条 + 下载速度" else "Windows 通知中心仅显示进度条（隐藏速度）",
+            description = if (com.yunx.app.util.MacSupport.isMac) "Mac 上只在全部下载完成时发送通知" else if (showSpeed) "Windows 通知中心进度条 + 下载速度" else "Windows 通知中心仅显示进度条（隐藏速度）",
             onClick = {
                 showSpeed = !showSpeed
                 settingsRepo.notificationShowSpeed = showSpeed
@@ -1399,7 +1399,7 @@ fun SettingsScreen(
                     }
                     Text(
                         text = "代理用于加速 GitHub 等海外资源；不使用代理时所有请求直连。" +
-                            "系统代理取自 Windows 系统设置，仅在启动或切换设置时读取一次。" +
+                            "系统代理取自系统设置，仅在启动或切换设置时读取一次。" +
                             "（暂不支持 PAC 脚本与绕过列表）",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant

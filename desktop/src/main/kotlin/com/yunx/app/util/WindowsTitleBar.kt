@@ -131,6 +131,7 @@ object WindowsTitleBar {
      * 的 AppsUseLightTheme 值判断：0=深色，1=浅色，未配置时默认浅色。
      */
     fun systemIsDarkMode(): Boolean {
+        if (MacSupport.isMac) return MacSupport.systemIsDark()
         if (!isWindows) return false
         return runCatching {
             val key = "Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize"

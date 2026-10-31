@@ -28,6 +28,10 @@ object WindowsKeepAwake {
 
     fun acquire() {
         if (refs.getAndIncrement() == 0) {
+            if (MacSupport.isMac) {
+                MacSupport.keepAwake(true)
+                return
+            }
             executor.execute {
                 runCatching { Kernel32.INSTANCE.SetThreadExecutionState(ES_CONTINUOUS or ES_SYSTEM_REQUIRED) }
             }
@@ -37,6 +41,10 @@ object WindowsKeepAwake {
     fun release() {
         if (refs.decrementAndGet() <= 0) {
             refs.set(0)
+            if (MacSupport.isMac) {
+                MacSupport.keepAwake(false)
+                return
+            }
             executor.execute {
                 runCatching { Kernel32.INSTANCE.SetThreadExecutionState(ES_CONTINUOUS) }
             }

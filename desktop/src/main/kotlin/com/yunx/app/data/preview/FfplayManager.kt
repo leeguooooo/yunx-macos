@@ -50,10 +50,10 @@ object FfplayManager {
 
     private const val TAG = "YunX-Ffplay"
 
-    private const val EXE_NAME = "ffplay.exe"
+    private val EXE_NAME = if (com.yunx.app.util.MacSupport.isMac) "ffplay" else "ffplay.exe"
 
     /** DASH 合轨用到的可执行文件（与 ffplay 同包，一起解出来） */
-    private const val FFMPEG_EXE = "ffmpeg.exe"
+    private val FFMPEG_EXE = if (com.yunx.app.util.MacSupport.isMac) "ffmpeg" else "ffmpeg.exe"
 
     /** ffplay 默认 UA 是 `Lavf/...`，很多平台的 CDN 会因此 403，缺省补一个 Chrome UA */
     private const val DEFAULT_UA =
@@ -129,6 +129,11 @@ object FfplayManager {
 
     /** 常见安装目录（PATH 未命中时兜底） */
     private val commonDirs: List<File> = buildList {
+        if (com.yunx.app.util.MacSupport.isMac) {
+            // 从访达打开的 App 拿不到 shell 的 PATH，Homebrew 目录要显式找
+            add(File("/opt/homebrew/bin"))
+            add(File("/usr/local/bin"))
+        }
         System.getenv("ProgramFiles")?.let { add(File(it, "ffmpeg/bin")) }
         System.getenv("ProgramFiles(x86)")?.let { add(File(it, "ffmpeg/bin")) }
         System.getenv("LOCALAPPDATA")?.let {
@@ -233,7 +238,8 @@ object FfplayManager {
      * 依次尝试 [candidates]，全部失败返回最后一个错误；协程取消会原样抛出。
      */
     suspend fun download(onProgress: (Long, Long) -> Unit = { _, _ -> }): Result<File> {
-        if (!isWindows()) return Result.failure(IOException("仅支持 Windows"))
+        if (com.yunx.app.util.MacSupport.isMac) return downloadMac(onProgress)
+        if (!isWindows()) return Result.failure(IOException("当前系统不支持自动下载"))
         return withContext(Dispatchers.IO) {
             // OkHttp 的 execute() 是阻塞的、不响应协程取消；用「看门狗」子协程在取消瞬间
             // 把所有在飞 Call 一并 cancel()，否则用户点「取消下载」会毫无反应。
@@ -272,6 +278,57 @@ object FfplayManager {
             }
         }
     }
+
+    /** Mac 没有一体包：ffmpeg / ffplay / ffprobe 各下一个 zip，再解到私有目录 */
+    private suspend fun downloadMac(onProgress: (Long, Long) -> Unit): Result<File> =
+        withContext(Dispatchers.IO) {
+            val registry = CallRegistry()
+            val watchdog = launch {
+                try {
+                    awaitCancellation()
+                } finally {
+                    registry.cancelAll()
+                }
+            }
+            try {
+                val arch = if (System.getProperty("os.arch").orEmpty().contains("aarch64")) "arm64" else "amd64"
+                val bin = File(installDir, "bin").apply { mkdirs() }
+                val client = HttpClients.downloadClient()
+                for (tool in listOf("ffmpeg", "ffplay", "ffprobe")) {
+                    val url = "https://ffmpeg.martin-riedl.de/redirect/latest/macos/$arch/release/$tool.zip"
+                    val tmp = File(AppContext.cacheDir, "$tool-${System.currentTimeMillis()}.zip")
+                    try {
+                        downloadStream(client, registry, url, tmp, onProgress)
+                        ZipInputStream(tmp.inputStream().buffered()).use { zis ->
+                            while (true) {
+                                val entry = zis.nextEntry ?: break
+                                if (entry.name.substringAfterLast('/') == tool) {
+                                    File(bin, tool).apply {
+                                        outputStream().buffered().use { zis.copyTo(it) }
+                                        setExecutable(true)
+                                    }
+                                }
+                                zis.closeEntry()
+                            }
+                        }
+                        if (!File(bin, tool).isFile) throw IOException("压缩包中未找到 $tool")
+                    } finally {
+                        tmp.delete()
+                    }
+                }
+                cached = privateExe
+                checked = true
+                cachedFfmpeg = privateFfmpeg
+                checkedFfmpeg = true
+                Result.success(privateExe)
+            } catch (c: CancellationException) {
+                throw c
+            } catch (t: Throwable) {
+                Result.failure(t)
+            } finally {
+                watchdog.cancel()
+            }
+        }
 
     private suspend fun downloadFrom(
         client: OkHttpClient,

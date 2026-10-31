@@ -939,9 +939,10 @@ private fun levelDescription(level: DbEncryptionLevel, supported: Boolean): Stri
     DbEncryptionLevel.NORMAL ->
         "库明文 · 凭证列加密 · 密钥用本机派生密钥包裹（绑定本机，换机器解不开）"
     DbEncryptionLevel.STRICT ->
-        "库明文 · 凭证列加密 · 密钥用 Windows DPAPI 保护（绑定当前 Windows 用户）"
+        if (com.yunx.app.util.MacSupport.isMac) "Mac 版暂不支持此档"
+        else "库明文 · 凭证列加密 · 密钥用 Windows DPAPI 保护（绑定当前 Windows 用户）"
     DbEncryptionLevel.STRICTEST ->
-        if (supported) "库整体加密 + DPAPI 保护密钥" else "库整体加密（SQLCipher）—— 暂未支持"
+        if (supported) "库整体加密 + 系统级密钥保护" else "库整体加密（SQLCipher）—— 暂未支持"
 }
 
 /** 切换档位前的后果提示 */

@@ -35,7 +35,9 @@ enum class DbEncryptionLevel(val id: String, val label: String) {
     STRICTEST("strictest", "严格");
 
     /** 该档位在当前系统上是否可用（严格档需要 SQLCipher 原生库，暂未支持） */
-    val isSupported: Boolean get() = this != STRICTEST
+    val isSupported: Boolean
+        get() = this != STRICTEST &&
+            !(this == STRICT && com.yunx.app.util.MacSupport.isMac)
 
     /** 密钥是否绑定本机（换机器后凭证将无法解密，需重新登录） */
     val isMachineBound: Boolean get() = this == NORMAL || this == STRICT
